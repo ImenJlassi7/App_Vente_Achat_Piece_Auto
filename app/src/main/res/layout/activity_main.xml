@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <Button
+        android:id="@+id/btnGetUsers"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Récupérer les utilisateurs" />
+
+    <TextView
+        android:id="@+id/tvUsers"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Utilisateurs :"/>
+
+    <Button
+        android:id="@+id/btnGetParts"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Récupérer les pièces auto" />
+
+    <TextView
+        android:id="@+id/tvParts"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Pièces Auto :" />
+</LinearLayout>
