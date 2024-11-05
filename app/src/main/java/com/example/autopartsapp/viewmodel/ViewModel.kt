@@ -62,24 +62,62 @@ class AutoPartViewModel : ViewModel() {
         })
     }
     fun addPart(part: AutoPart, onComplete: () -> Unit) {
-        viewModelScope.launch {
-            // Implement your API call to add the part
-            onComplete()
-        }
+        RetrofitClient.instance.addAutoPart(part).enqueue(object : Callback<AutoPart> {
+            override fun onResponse(call: Call<AutoPart>, response: Response<AutoPart>) {
+                if (response.isSuccessful) {
+                    // Update the parts data and reset error message
+                    partsData = partsData + (response.body() ?: part) // Add the new part to the list
+                    errorMessage = "" // Clear any previous error
+                } else {
+                    errorMessage = "Error adding part: ${response.message()}"
+                }
+                onComplete()
+            }
+
+            override fun onFailure(call: Call<AutoPart>, t: Throwable) {
+                errorMessage = "Error: ${t.localizedMessage}"
+                onComplete()
+            }
+        })
     }
 
     fun deletePart(id: String, onComplete: () -> Unit) {
-        viewModelScope.launch {
-            // Implement your API call to delete the part
-            onComplete()
-        }
+        RetrofitClient.instance.deleteAutoPart(id).enqueue(object : Callback<Void> {
+            override fun onResponse(call: Call<Void>, response: Response<Void>) {
+                if (response.isSuccessful) {
+                    // Remove the deleted part from the list
+                    partsData = partsData.filter { it.id != id }
+                    errorMessage = "" // Clear any previous error
+                } else {
+                    errorMessage = "Error deleting part: ${response.message()}"
+                }
+                onComplete()
+            }
+
+            override fun onFailure(call: Call<Void>, t: Throwable) {
+                errorMessage = "Error: ${t.localizedMessage}"
+                onComplete()
+            }
+        })
     }
 
     fun modifyPart(part: AutoPart, onComplete: () -> Unit) {
-        viewModelScope.launch {
-            // Implement your API call to modify the part
-            onComplete()
-        }
-    }
-}
+        RetrofitClient.instance.updateAutoPart(part.id, part).enqueue(object : Callback<AutoPart> {
+            override fun onResponse(call: Call<AutoPart>, response: Response<AutoPart>) {
+                if (response.isSuccessful) {
+                    // Update the parts data with the modified part
+                    partsData =
+                        partsData.map { if (it.id == part.id) response.body() ?: it else it }
+                    errorMessage = "" // Clear any previous error
+                } else {
+                    errorMessage = "Error modifying part: ${response.message()}"
+                }
+                onComplete()
+            }
 
+            override fun onFailure(call: Call<AutoPart>, t: Throwable) {
+                errorMessage = "Error: ${t.localizedMessage}"
+                onComplete()
+            }
+        })
+    }}

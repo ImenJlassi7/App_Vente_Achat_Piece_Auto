@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -30,22 +31,22 @@ import kotlinx.coroutines.launch
 fun AutoView(
     onGetUsersClick: () -> Unit,
     onGetPartsClick: () -> Unit,
-    onAddPartClick: (AutoPart) -> Unit,
-    onDeletePartClick: (String) -> Unit,
     onModifyPartClick: (AutoPart) -> Unit,
+    onDeletePartClick: (String) -> Unit,
     usersData: List<User>,
     partsData: List<AutoPart>,
     loading: Boolean,
     errorMessage: String,
+    onAddPartClick: (AutoPart) -> Unit // Function to add a part
 ) {
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
 
     var isSearchActive by remember { mutableStateOf(false) }
     var searchText by remember { mutableStateOf(TextFieldValue("")) }
-
     var selectedPart by remember { mutableStateOf<AutoPart?>(null) }
     var isShowingParts by remember { mutableStateOf(true) }
+    var showAddPartDialog by remember { mutableStateOf(false) } // State to control the dialog
 
     LaunchedEffect(Unit) {
         onGetPartsClick()
@@ -59,13 +60,13 @@ fun AutoView(
                     onGetUsersClick = {
                         scope.launch { drawerState.close() }
                         isShowingParts = false
-                        selectedPart = null // Reset selected part
+                        selectedPart = null
                         onGetUsersClick()
                     },
                     onGetPartsClick = {
                         scope.launch { drawerState.close() }
                         isShowingParts = true
-                        selectedPart = null // Reset selected part
+                        selectedPart = null
                         onGetPartsClick()
                     }
                 )
@@ -86,7 +87,6 @@ fun AutoView(
                                 colors = TextFieldDefaults.textFieldColors(
                                     focusedIndicatorColor = MaterialTheme.colorScheme.primary,
                                     unfocusedIndicatorColor = Color.Gray,
-                                    // Remove the backgroundColor line
                                 )
                             )
                         } else {
@@ -103,7 +103,7 @@ fun AutoView(
                                     scope.launch { drawerState.open() }
                                 }
                             },
-                            colors = IconButtonDefaults.iconButtonColors(contentColor = Color.White) // Set icon color to white
+                            colors = IconButtonDefaults.iconButtonColors(contentColor = Color.White)
                         ) {
                             Icon(
                                 imageVector = if (isSearchActive) Icons.Filled.Close else Icons.Filled.Menu,
@@ -119,7 +119,7 @@ fun AutoView(
                         }
                     },
                     colors = TopAppBarDefaults.smallTopAppBarColors(
-                        containerColor = Color(0xFFFFA500), // Orange color
+                        containerColor = Color(0xFFFFA500),
                         titleContentColor = Color.White,
                         actionIconContentColor = Color.White
                     )
@@ -143,8 +143,7 @@ fun AutoView(
                         CircularProgressIndicator(color = MaterialTheme.colorScheme.primary)
                     } else {
                         if (selectedPart != null) {
-                            // Display details of the selected part
-                            PartDetailView(selectedPart!!, onBackClick = { selectedPart = null })
+                            PartDetailView(selectedPart!!, onBackClick = { selectedPart = null }, onModifyPartClick)
                         } else if (isShowingParts) {
                             Text(
                                 text = "Pièces Auto",
@@ -152,10 +151,9 @@ fun AutoView(
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.padding(bottom = 8.dp)
                             )
-                            // Part Data Section
                             partsData.forEach { part ->
                                 PartCard(part, onModifyPartClick, onDeletePartClick) {
-                                    selectedPart = part // Set selected part on click
+                                    selectedPart = part
                                 }
                             }
                         } else {
@@ -187,7 +185,39 @@ fun AutoView(
                         }
                     }
                 }
+
+                if (showAddPartDialog) {
+                    AddPartDialog(onDismiss = { showAddPartDialog = false }) { part ->
+                        onAddPartClick(part)
+                        showAddPartDialog = false
+                    }
+                }
+
+                // Floating action button for adding a part
+                FloatingActionButton(
+                    onClick = { showAddPartDialog = true },
+                    modifier = Modifier
+                        .align(Alignment.BottomStart)
+                        .padding(16.dp)
+                ) {
+                    Icon(Icons.Filled.Add, contentDescription = "Ajouter une pièce")
+                }
             }
+        }
+    }
+}
+
+@Composable
+fun DrawerContent(
+    onGetUsersClick: () -> Unit,
+    onGetPartsClick: () -> Unit
+) {
+    Column {
+        TextButton(onClick = onGetUsersClick) {
+            Text("Utilisateurs")
+        }
+        TextButton(onClick = onGetPartsClick) {
+            Text("Pièces Auto")
         }
     }
 }
@@ -199,7 +229,7 @@ fun PartCard(part: AutoPart, onModifyPartClick: (AutoPart) -> Unit, onDeletePart
             .fillMaxWidth()
             .clickable { onClick() }
             .padding(8.dp)
-            .background(Color(0xFFE0E0E0)), // Gray background for the card
+            .background(Color(0xFFE0E0E0)),
         shape = RoundedCornerShape(8.dp),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 8.dp)
     ) {
@@ -213,12 +243,12 @@ fun PartCard(part: AutoPart, onModifyPartClick: (AutoPart) -> Unit, onDeletePart
             Column(modifier = Modifier.weight(1f)) {
                 if (part.images.isNotEmpty()) {
                     AsyncImage(
-                        model = part.images[0], // Load the first image
+                        model = part.images[0],
                         contentDescription = "${part.name} image",
                         modifier = Modifier
-                            .height(100.dp) // Set a specific height for images
+                            .height(100.dp)
                             .fillMaxWidth(),
-                        error = painterResource(id = R.drawable.ic_launcher_foreground) // Placeholder for error
+                        error = painterResource(id = R.drawable.ic_launcher_foreground)
                     )
                 }
                 Text(
@@ -241,49 +271,84 @@ fun PartCard(part: AutoPart, onModifyPartClick: (AutoPart) -> Unit, onDeletePart
 }
 
 @Composable
-fun PartDetailView(part: AutoPart, onBackClick: () -> Unit) {
+fun PartDetailView(part: AutoPart, onBackClick: () -> Unit, onModifyPartClick: (AutoPart) -> Unit) {
+    var name by remember { mutableStateOf(part.name) }
+    var brand by remember { mutableStateOf(part.brand) }
+    var condition by remember { mutableStateOf(part.condition) }
+    var description by remember { mutableStateOf(part.description) }
+    var price by remember { mutableStateOf(part.price.toString()) }
+    var carModel by remember { mutableStateOf(part.carModel) }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-            .background(Color.White, RoundedCornerShape(8.dp))
+            .background(Color.White, RoundedCornerShape(8.dp)),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(text = part.name, fontSize = 24.sp, color = MaterialTheme.colorScheme.primary)
-        Text(text = part.description, fontSize = 16.sp)
-        Text(text = "Price: ${part.price} €", fontSize = 16.sp)
-        Text(text = "Brand: ${part.brand}", fontSize = 16.sp)  // Display brand
-        Text(text = "Car Model: ${part.carModel}", fontSize = 16.sp)  // Display car model
-        Text(text = "Condition: ${part.condition}", fontSize = 16.sp)  // Display condition
-        Spacer(modifier = Modifier.height(16.dp))
-        Text(text = "Images:", fontSize = 20.sp)
-
-        // Display all images
-        part.images.forEach { imageUrl ->
-            AsyncImage(
-                model = imageUrl,
-                contentDescription = "Image for ${part.name}",
-                modifier = Modifier
-                    .height(150.dp)
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                error = painterResource(id = R.drawable.ic_launcher_foreground) // Placeholder for error
-            )
+        Text("Détails de la pièce", fontSize = 24.sp)
+        TextField(value = name, onValueChange = { name = it }, label = { Text("Nom") })
+        TextField(value = brand, onValueChange = { brand = it }, label = { Text("Marque") })
+        TextField(value = condition, onValueChange = { condition = it }, label = { Text("Condition") })
+        TextField(value = description, onValueChange = { description = it }, label = { Text("Description") })
+        TextField(value = price, onValueChange = { price = it }, label = { Text("Prix") })
+        TextField(value = carModel, onValueChange = { carModel = it }, label = { Text("Modèle de voiture") })
+        Button(onClick = {
+            onModifyPartClick(part.copy(name = name, brand = brand, condition = condition, description = description, price = price.toDoubleOrNull() ?: 0.0, carModel = carModel))
+            onBackClick()
+        }) {
+            Text("Modifier")
         }
-
-        Button(onClick = onBackClick, modifier = Modifier.padding(top = 16.dp)) {
-            Text("Retourner à la liste")
+        Button(onClick = { onBackClick() }) {
+            Text("Retour")
         }
     }
 }
 
 @Composable
-fun DrawerContent(onGetUsersClick: () -> Unit, onGetPartsClick: () -> Unit) {
-    Column {
-        TextButton(onClick = onGetUsersClick) {
-            Text("Utilisateurs")
+fun AddPartDialog(onDismiss: () -> Unit, onAddPart: (AutoPart) -> Unit) {
+    var name by remember { mutableStateOf("") }
+    var brand by remember { mutableStateOf("") }
+    var condition by remember { mutableStateOf("") }
+    var description by remember { mutableStateOf("") }
+    var price by remember { mutableStateOf("") }
+    var carModel by remember { mutableStateOf("") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Ajouter une nouvelle pièce") },
+        text = {
+            Column {
+                TextField(value = name, onValueChange = { name = it }, label = { Text("Nom") })
+                TextField(value = brand, onValueChange = { brand = it }, label = { Text("Marque") })
+                TextField(value = condition, onValueChange = { condition = it }, label = { Text("Condition") })
+                TextField(value = description, onValueChange = { description = it }, label = { Text("Description") })
+                TextField(value = price, onValueChange = { price = it }, label = { Text("Prix") })
+                TextField(value = carModel, onValueChange = { carModel = it }, label = { Text("Modèle de voiture") })
+            }
+        },
+        confirmButton = {
+            Button(onClick = {
+                val part = AutoPart(
+                    id = "", // Set this according to your needs, e.g., generate a unique ID
+                    name = name,
+                    brand = brand,
+                    condition = condition,
+                    description = description,
+                    price = price.toDoubleOrNull() ?: 0.0,
+                    carModel = carModel,
+                    images = emptyList() // Set this according to your needs
+                )
+                onAddPart(part)
+                onDismiss()
+            }) {
+                Text("Ajouter")
+            }
+        },
+        dismissButton = {
+            Button(onClick = onDismiss) {
+                Text("Annuler")
+            }
         }
-        TextButton(onClick = onGetPartsClick) {
-            Text("Pièces Auto")
-        }
-    }
+    )
 }
