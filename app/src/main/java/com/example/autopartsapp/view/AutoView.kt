@@ -272,39 +272,39 @@ fun PartCard(part: AutoPart, onModifyPartClick: (AutoPart) -> Unit, onDeletePart
 
 @Composable
 fun PartDetailView(part: AutoPart, onBackClick: () -> Unit, onModifyPartClick: (AutoPart) -> Unit) {
-    var name by remember { mutableStateOf(part.name) }
-    var brand by remember { mutableStateOf(part.brand) }
-    var condition by remember { mutableStateOf(part.condition) }
-    var description by remember { mutableStateOf(part.description) }
-    var price by remember { mutableStateOf(part.price.toString()) }
-    var carModel by remember { mutableStateOf(part.carModel) }
-
     Column(
         modifier = Modifier
             .fillMaxSize()
             .padding(16.dp)
-            .background(Color.White, RoundedCornerShape(8.dp)),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            .background(Color.White, RoundedCornerShape(8.dp))
     ) {
-        Text("Détails de la pièce", fontSize = 24.sp)
-        TextField(value = name, onValueChange = { name = it }, label = { Text("Nom") })
-        TextField(value = brand, onValueChange = { brand = it }, label = { Text("Marque") })
-        TextField(value = condition, onValueChange = { condition = it }, label = { Text("Condition") })
-        TextField(value = description, onValueChange = { description = it }, label = { Text("Description") })
-        TextField(value = price, onValueChange = { price = it }, label = { Text("Prix") })
-        TextField(value = carModel, onValueChange = { carModel = it }, label = { Text("Modèle de voiture") })
-        Button(onClick = {
-            onModifyPartClick(part.copy(name = name, brand = brand, condition = condition, description = description, price = price.toDoubleOrNull() ?: 0.0, carModel = carModel))
-            onBackClick()
-        }) {
-            Text("Modifier")
+        Text(text = part.name, fontSize = 24.sp, color = MaterialTheme.colorScheme.primary)
+        Text(text = part.description, fontSize = 16.sp)
+        Text(text = "Price: ${part.price} €", fontSize = 16.sp)
+        Text(text = "Brand: ${part.brand}", fontSize = 16.sp)  // Display brand
+        Text(text = "Car Model: ${part.carModel}", fontSize = 16.sp)  // Display car model
+        Text(text = "Condition: ${part.condition}", fontSize = 16.sp)  // Display condition
+        Spacer(modifier = Modifier.height(16.dp))
+        Text(text = "Images:", fontSize = 20.sp)
+
+        // Display all images
+        part.images.forEach { imageUrl ->
+            AsyncImage(
+                model = imageUrl,
+                contentDescription = "Image for ${part.name}",
+                modifier = Modifier
+                    .height(150.dp)
+                    .fillMaxWidth()
+                    .padding(vertical = 8.dp),
+                error = painterResource(id = R.drawable.ic_launcher_foreground) // Placeholder for error
+            )
         }
-        Button(onClick = { onBackClick() }) {
-            Text("Retour")
+
+        Button(onClick = onBackClick, modifier = Modifier.padding(top = 16.dp)) {
+            Text("Retourner à la liste")
         }
     }
 }
-
 @Composable
 fun AddPartDialog(onDismiss: () -> Unit, onAddPart: (AutoPart) -> Unit) {
     var name by remember { mutableStateOf("") }
