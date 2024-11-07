@@ -10,9 +10,10 @@ import com.example.autopartsapp.RetrofitClient.RetrofitClient
 import com.example.autopartsapp.models.AutoPart
 import com.example.autopartsapp.models.User
 import kotlinx.coroutines.launch
-import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
+import retrofit2.Call
+import retrofit2.http.Part
 
 class AutoPartViewModel : ViewModel() {
     var usersData by mutableStateOf<List<User>>(emptyList())
@@ -41,7 +42,7 @@ class AutoPartViewModel : ViewModel() {
         })
     }
 
-    fun fetchParts(onResult: (List<AutoPart>) -> Unit) {
+    fun getParts() {
         loading = true
         RetrofitClient.instance.getAllParts().enqueue(object : Callback<List<AutoPart>> {
             override fun onResponse(call: Call<List<AutoPart>>, response: Response<List<AutoPart>>) {
@@ -49,18 +50,17 @@ class AutoPartViewModel : ViewModel() {
                 if (response.isSuccessful) {
                     partsData = response.body() ?: emptyList()
                 } else {
-                    errorMessage = "Error fetching parts: ${response.message()}"
+                    errorMessage = "Erreur lors de la récupération des pièces"
                 }
-                onResult(partsData)
             }
 
             override fun onFailure(call: Call<List<AutoPart>>, t: Throwable) {
                 loading = false
-                errorMessage = "Error: ${t.localizedMessage}"
-                onResult(emptyList())
+                errorMessage = "Erreur: ${t.localizedMessage}"
             }
         })
     }
+
     fun addPart(part: AutoPart, onComplete: () -> Unit) {
         viewModelScope.launch {
             // Implement your API call to add the part
@@ -68,12 +68,30 @@ class AutoPartViewModel : ViewModel() {
         }
     }
 
-    fun deletePart(id: String, onComplete: () -> Unit) {
-        viewModelScope.launch {
-            // Implement your API call to delete the part
-            onComplete()
-        }
+    // Function to delete part
+    fun deletePart(id: String, onComplete: (Boolean) -> Unit) {
+        loading = true
+        println("Attempting to delete part with ID: $id") // Ajoutez ce log
+        RetrofitClient.instance.deletePart(id).enqueue(object : Callback<Unit> {
+            override fun onResponse(call: Call<Unit>, response: Response<Unit>) {
+                loading = false
+                if (response.isSuccessful) {
+                    onComplete(true) // Succès
+                } else {
+                    errorMessage = "Failed to delete part: ${response.message()}"
+                    onComplete(false) // Échec
+                }
+            }
+
+            override fun onFailure(call: Call<Unit>, t: Throwable) {
+                loading = false
+                errorMessage = "Error: ${t.localizedMessage}"
+                onComplete(false) // Échec
+            }
+        })
     }
+
+
 
     fun modifyPart(part: AutoPart, onComplete: () -> Unit) {
         viewModelScope.launch {
@@ -82,4 +100,3 @@ class AutoPartViewModel : ViewModel() {
         }
     }
 }
-

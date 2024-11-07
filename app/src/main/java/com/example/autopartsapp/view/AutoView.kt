@@ -31,7 +31,7 @@ fun AutoView(
     onGetUsersClick: () -> Unit,
     onGetPartsClick: () -> Unit,
     onAddPartClick: (AutoPart) -> Unit,
-    onDeletePartClick: (String) -> Unit,
+    onDeletePartClick: (AutoPart) -> Unit,
     onModifyPartClick: (AutoPart) -> Unit,
     usersData: List<User>,
     partsData: List<AutoPart>,
@@ -46,6 +46,7 @@ fun AutoView(
 
     var selectedPart by remember { mutableStateOf<AutoPart?>(null) }
     var isShowingParts by remember { mutableStateOf(true) }
+
 
     LaunchedEffect(Unit) {
         onGetPartsClick()
@@ -159,12 +160,12 @@ fun AutoView(
                                 }
                             }
                         } else {
-                            Text(
+                            /*Text(
                                 text = "Utilisateurs",
                                 fontSize = 24.sp,
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.padding(bottom = 8.dp)
-                            )
+                            )*/
                             usersData.forEach { user ->
                                 Text(
                                     text = "${user.name}, ${user.email}",
@@ -193,7 +194,7 @@ fun AutoView(
 }
 
 @Composable
-fun PartCard(part: AutoPart, onModifyPartClick: (AutoPart) -> Unit, onDeletePartClick: (String) -> Unit, onClick: () -> Unit) {
+fun PartCard(part: AutoPart, onModifyPartClick: (AutoPart) -> Unit, onDeletePartClick: (AutoPart) -> Unit, onClick: () -> Unit) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -232,7 +233,7 @@ fun PartCard(part: AutoPart, onModifyPartClick: (AutoPart) -> Unit, onDeletePart
                 IconButton(onClick = { onModifyPartClick(part) }) {
                     Icon(Icons.Filled.Edit, contentDescription = "Modifier pièce")
                 }
-                IconButton(onClick = { onDeletePartClick(part.id) }) {
+                IconButton(onClick = { onDeletePartClick(part) }) {
                     Icon(Icons.Filled.Delete, contentDescription = "Supprimer pièce")
                 }
             }
@@ -279,9 +280,9 @@ fun PartDetailView(part: AutoPart, onBackClick: () -> Unit) {
 @Composable
 fun DrawerContent(onGetUsersClick: () -> Unit, onGetPartsClick: () -> Unit) {
     Column {
-        TextButton(onClick = onGetUsersClick) {
+       /* TextButton(onClick = onGetUsersClick) {
             Text("Utilisateurs")
-        }
+        }*/
         TextButton(onClick = onGetPartsClick) {
             Text("Pièces Auto")
         }
